@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { Area, AreaChart, Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts";
 import {
   ChartContainer,
@@ -14,6 +15,7 @@ import { useI18n } from "@/lib/i18n";
 
 export function LetterVolumeChart() {
   const { t } = useI18n();
+  const router = useRouter();
   const volumeConfig = {
     incoming: { label: t("Incoming"), color: "var(--chart-1)" },
     outgoing: { label: t("Outgoing"), color: "var(--chart-2)" },
@@ -37,8 +39,8 @@ export function LetterVolumeChart() {
         <YAxis tickLine={false} axisLine={false} width={36} />
         <ChartTooltip content={<ChartTooltipContent indicator="line" />} />
         <ChartLegend content={<ChartLegendContent />} />
-        <Area dataKey="incoming" type="monotone" stroke="var(--color-incoming)" strokeWidth={2} fill="url(#fill-incoming)" />
-        <Area dataKey="outgoing" type="monotone" stroke="var(--color-outgoing)" strokeWidth={2} fill="url(#fill-outgoing)" />
+        <Area dataKey="incoming" className="cursor-pointer" onClick={() => router.push("/letters?type=Incoming")} type="monotone" stroke="var(--color-incoming)" strokeWidth={2} fill="url(#fill-incoming)" />
+        <Area dataKey="outgoing" className="cursor-pointer" onClick={() => router.push("/letters?type=Outgoing")} type="monotone" stroke="var(--color-outgoing)" strokeWidth={2} fill="url(#fill-outgoing)" />
       </AreaChart>
     </ChartContainer>
   );
@@ -46,6 +48,7 @@ export function LetterVolumeChart() {
 
 export function StatusChart() {
   const { t, tv, locale } = useI18n();
+  const router = useRouter();
   const statusConfig = {
     count: { label: t("Letters"), color: "var(--chart-1)" },
   } satisfies ChartConfig;
@@ -57,7 +60,17 @@ export function StatusChart() {
         <XAxis type="number" hide />
         <YAxis dataKey="status" type="category" tickLine={false} axisLine={false} width={locale === "am" ? 104 : 72} tickFormatter={tv} />
         <ChartTooltip cursor={false} content={<ChartTooltipContent hideIndicator labelFormatter={(label) => tv(String(label))} />} />
-        <Bar dataKey="count" fill="var(--color-count)" radius={[0, 6, 6, 0]} barSize={22} />
+        <Bar
+          dataKey="count"
+          fill="var(--color-count)"
+          radius={[0, 6, 6, 0]}
+          barSize={22}
+          className="cursor-pointer"
+          onClick={(entry) => {
+            const status = (entry as { payload?: { status?: string } }).payload?.status;
+            if (status) router.push(`/letters?status=${encodeURIComponent(status)}`);
+          }}
+        />
       </BarChart>
     </ChartContainer>
   );

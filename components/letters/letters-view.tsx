@@ -1,7 +1,8 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Archive, Eye, Forward, Inbox, MoreHorizontal, Paperclip, Plus, Search } from "lucide-react";
+import { usePathname, useSearchParams } from "next/navigation";
+import { Archive, Eye, Forward, Inbox, MoreHorizontal, Paperclip, Plus, Search, X } from "lucide-react";
 import { toast } from "sonner";
 import { FilterSelect } from "@/components/filter-select";
 import { PageHeader } from "@/components/page-header";
@@ -47,10 +48,38 @@ export function LettersView({ kind = "letters" }: { kind?: "letters" | "memos" }
   const [letters, setLetters] = useState<Letter[]>(() =>
     seedLetters.filter((l) => (l.type === "Memo") === isMemos),
   );
-  const [type, setType] = useState<(typeof types)[number]>("All");
-  const [status, setStatus] = useState(statuses[0]);
-  const [priority, setPriority] = useState(priorities[0]);
-  const [query, setQuery] = useState("");
+  // The URL is the source of truth for filters (?type=&status=&priority=&q=). The route stays
+  // mounted between visits, so state initialised once from the URL would go stale when a
+  // dashboard drill-down navigates here with different filters.
+  const pathname = usePathname();
+  const params = useSearchParams();
+  const pick = <T extends string>(key: string, allowed: readonly T[], fallback: T) => {
+    const value = params.get(key) as T | null;
+    return value && allowed.includes(value) ? value : fallback;
+  };
+  const type = pick<(typeof types)[number]>("type", types, "All");
+  const status = pick("status", statuses, statuses[0]);
+  const priority = pick("priority", priorities, priorities[0]);
+  const query = params.get("q") ?? "";
+  const hasFilters = type !== "All" || status !== statuses[0] || priority !== priorities[0] || query !== "";
+
+  function replaceParams(next: URLSearchParams) {
+    const search = next.toString();
+    // history.replaceState keeps useSearchParams in sync without a server round trip.
+    window.history.replaceState(null, "", search ? `${pathname}?${search}` : pathname);
+  }
+  function setFilter(key: "type" | "status" | "priority" | "q", value: string, emptyValue: string) {
+    const next = new URLSearchParams(params.toString());
+    if (value === emptyValue) next.delete(key);
+    else next.set(key, value);
+    replaceParams(next);
+  }
+  const setType = (value: string) => setFilter("type", value, "All");
+  const setStatus = (value: string) => setFilter("status", value, statuses[0]);
+  const setPriority = (value: string) => setFilter("priority", value, priorities[0]);
+  const setQuery = (value: string) => setFilter("q", value, "");
+  const clearFilters = () => replaceParams(new URLSearchParams());
+
   const [selected, setSelected] = useState<Letter | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
 
@@ -66,6 +95,14 @@ export function LettersView({ kind = "letters" }: { kind?: "letters" | "memos" }
   }, [letters, type, status, priority, query]);
 
   const pagination = usePagination(filtered);
+
+  // Go back to the first page whenever the filters change, including via navigation.
+  const filterKey = params.toString();
+  const [lastFilterKey, setLastFilterKey] = useState(filterKey);
+  if (filterKey !== lastFilterKey) {
+    setLastFilterKey(filterKey);
+    pagination.setPage(1);
+  }
   const count = (tab: string) => (tab === "All" ? letters.length : letters.filter((l) => l.type === tab).length);
 
   function createLetter(form: FormData) {
@@ -166,7 +203,7 @@ export function LettersView({ kind = "letters" }: { kind?: "letters" | "memos" }
       <Card>
         <CardContent className="grid gap-4">
           {isMemos ? null : (
-            <Tabs value={type} onValueChange={(v) => { setType(v as (typeof types)[number]); pagination.setPage(1); }}>
+            <Tabs value={type} onValueChange={(v) => { setType(v as string); }}>
               <div className="-mx-1 overflow-x-auto px-1">
                 <TabsList>
                   {types.map((tab) => (
@@ -185,14 +222,19 @@ export function LettersView({ kind = "letters" }: { kind?: "letters" | "memos" }
               <Search className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
               <Input
                 value={query}
-                onChange={(e) => { setQuery(e.target.value); pagination.setPage(1); }}
+                onChange={(e) => { setQuery(e.target.value); }}
                 placeholder={t("Search subject, reference, sender…")}
                 aria-label={isMemos ? t("Search memos") : t("Search letters")}
                 className="pl-8"
               />
             </div>
-            <FilterSelect value={status} onChange={(v) => { setStatus(v); pagination.setPage(1); }} options={statuses} className="w-40" />
-            <FilterSelect value={priority} onChange={(v) => { setPriority(v); pagination.setPage(1); }} options={priorities} className="w-40" />
+            <FilterSelect value={status} onChange={(v) => { setStatus(v); }} options={statuses} className="w-40" />
+            <FilterSelect value={priority} onChange={(v) => { setPriority(v); }} options={priorities} className="w-40" />
+            {hasFilters ? (
+              <Button variant="ghost" onClick={() => { clearFilters(); }}>
+                <X /> {t("Clear filters")}
+              </Button>
+            ) : null}
           </div>
 
           <div className="overflow-hidden rounded-lg border">

@@ -162,6 +162,13 @@ export const letterVolume = [
   { month: "Nov", incoming: 904, outgoing: 742 },
 ];
 
+export const typeBreakdown: { type: LetterType; count: number }[] = [
+  { type: "Incoming", count: 6480 },
+  { type: "Outgoing", count: 4930 },
+  { type: "Internal", count: 2510 },
+  { type: "Memo", count: 1322 },
+];
+
 export const statusDistribution = [
   { status: "Published", count: 8412 },
   { status: "Pending", count: 2907 },

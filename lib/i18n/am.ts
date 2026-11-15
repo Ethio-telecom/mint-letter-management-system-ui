@@ -60,6 +60,11 @@ export const am = {
   "Recent letters": "የቅርብ ጊዜ ደብዳቤዎች",
   "Latest correspondence registered in the system": "በሥርዓቱ የተመዘገቡ የቅርብ ጊዜ ደብዳቤዎች",
   "View all": "ሁሉንም ይመልከቱ",
+  "Letters by type": "ደብዳቤዎች በዓይነት",
+  "Select a type to open its list.": "ዝርዝሩን ለመክፈት ዓይነት ይምረጡ።",
+  "Select a series to open its list.": "ዝርዝሩን ለመክፈት መስመር ይምረጡ።",
+  "Select a bar to open its list.": "ዝርዝሩን ለመክፈት አሞሌ ይምረጡ።",
+  "Clear filters": "ማጣሪያዎችን አጽዳ",
   "Top organizations": "ቀዳሚ ተቋማት",
   "Ranked by letters handled": "በተስተናገዱ ደብዳቤዎች ብዛት",
 
