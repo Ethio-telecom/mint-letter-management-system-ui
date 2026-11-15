@@ -1,8 +1,8 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { usePathname, useSearchParams } from "next/navigation";
-import { Archive, Eye, Forward, Inbox, MoreHorizontal, Paperclip, Plus, Search, X } from "lucide-react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { Archive, Eye, Forward, Inbox, MoreHorizontal, Plus, Search, X } from "lucide-react";
 import { toast } from "sonner";
 import { FilterSelect } from "@/components/filter-select";
 import { PageHeader } from "@/components/page-header";
@@ -30,11 +30,11 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Sheet, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
-import { letters as seedLetters, organizations, type Letter, type LetterPriority, type LetterType } from "@/lib/data";
+import { organizations, type Letter, type LetterPriority, type LetterType } from "@/lib/data";
+import { letterHref, letterStore, useLetters } from "@/lib/letter-store";
 import { useI18n } from "@/lib/i18n";
 
 const types = ["All", "Incoming", "Outgoing", "Internal"] as const;
@@ -45,9 +45,9 @@ const priorities = ["All priorities", "Low", "Medium", "High", "Urgent"];
 export function LettersView({ kind = "letters" }: { kind?: "letters" | "memos" }) {
   const isMemos = kind === "memos";
   const { t, tv } = useI18n();
-  const [letters, setLetters] = useState<Letter[]>(() =>
-    seedLetters.filter((l) => (l.type === "Memo") === isMemos),
-  );
+  const router = useRouter();
+  const allLetters = useLetters();
+  const letters = useMemo(() => allLetters.filter((l) => (l.type === "Memo") === isMemos), [allLetters, isMemos]);
   // The URL is the source of truth for filters (?type=&status=&priority=&q=). The route stays
   // mounted between visits, so state initialised once from the URL would go stale when a
   // dashboard drill-down navigates here with different filters.
@@ -80,7 +80,6 @@ export function LettersView({ kind = "letters" }: { kind?: "letters" | "memos" }
   const setQuery = (value: string) => setFilter("q", value, "");
   const clearFilters = () => replaceParams(new URLSearchParams());
 
-  const [selected, setSelected] = useState<Letter | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
 
   const filtered = useMemo(() => {
@@ -107,8 +106,8 @@ export function LettersView({ kind = "letters" }: { kind?: "letters" | "memos" }
 
   function createLetter(form: FormData) {
     const letter: Letter = {
-      id: `ltr-new-${letters.length + 1}`,
-      reference: `MINT-${String(letters.length + 31).padStart(4, "0")}`,
+      id: `ltr-new-${allLetters.length + 1}`,
+      reference: `MINT-${String(allLetters.length + 31).padStart(4, "0")}`,
       subject: String(form.get("subject")),
       sender: "Ministry of Innovation and Technology",
       recipient: String(form.get("recipient")),
@@ -118,14 +117,14 @@ export function LettersView({ kind = "letters" }: { kind?: "letters" | "memos" }
       date: "Nov 15, 2026",
       body: String(form.get("body") || ""),
     };
-    setLetters((prev) => [letter, ...prev]);
+    letterStore.add(letter);
     pagination.setPage(1);
     setDialogOpen(false);
     toast.success(isMemos ? t("Memo saved as draft") : t("Letter saved as draft"), { description: `${letter.reference} · ${letter.subject}` });
   }
 
   function archive(letter: Letter) {
-    setLetters((prev) => prev.map((l) => (l.id === letter.id ? { ...l, status: "Archived" } : l)));
+    letterStore.update(letter.id, { status: "Archived" });
     toast.success(t("{name} archived", { name: letter.reference }));
   }
 
@@ -262,7 +261,7 @@ export function LettersView({ kind = "letters" }: { kind?: "letters" | "memos" }
                   </TableRow>
                 ) : (
                   pagination.rows.map((letter) => (
-                    <TableRow key={letter.id} className="cursor-pointer" onClick={() => setSelected(letter)}>
+                    <TableRow key={letter.id} className="cursor-pointer" onClick={() => router.push(letterHref(letter))}>
                       <TableCell className="font-mono text-xs text-muted-foreground">{letter.reference}</TableCell>
                       <TableCell className="max-w-72 truncate font-medium">{letter.subject}</TableCell>
                       <TableCell className="hidden max-w-44 truncate text-muted-foreground lg:table-cell">{letter.sender}</TableCell>
@@ -285,7 +284,7 @@ export function LettersView({ kind = "letters" }: { kind?: "letters" | "memos" }
                             <MoreHorizontal />
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end" className="min-w-40">
-                            <DropdownMenuItem onClick={() => setSelected(letter)}>
+                            <DropdownMenuItem onClick={() => router.push(letterHref(letter))}>
                               <Eye /> {t("View details")}
                             </DropdownMenuItem>
                             <DropdownMenuItem onClick={() => toast.info(t("Forwarding {name}", { name: letter.reference }))}>
@@ -309,57 +308,6 @@ export function LettersView({ kind = "letters" }: { kind?: "letters" | "memos" }
         </CardContent>
       </Card>
 
-      <Sheet open={selected !== null} onOpenChange={(open) => !open && setSelected(null)}>
-        <SheetContent className="w-full sm:max-w-md">
-          {selected ? (
-            <>
-              <SheetHeader>
-                <SheetDescription className="font-mono text-xs">{selected.reference}</SheetDescription>
-                <SheetTitle className="text-lg leading-snug">{selected.subject}</SheetTitle>
-                <div className="flex flex-wrap gap-1.5 pt-1">
-                  <StatusBadge value={selected.status} />
-                  <StatusBadge value={selected.priority} dot={false} />
-                  <Badge variant="outline">{tv(selected.type)}</Badge>
-                </div>
-              </SheetHeader>
-              <div className="grid gap-5 overflow-y-auto px-4">
-                <dl className="grid grid-cols-[5rem_1fr] gap-x-3 gap-y-3 text-sm">
-                  <dt className="text-muted-foreground">{t("From")}</dt>
-                  <dd className="font-medium">{selected.sender}</dd>
-                  <dt className="text-muted-foreground">{t("To")}</dt>
-                  <dd className="font-medium">{selected.recipient}</dd>
-                  <dt className="text-muted-foreground">{t("Date")}</dt>
-                  <dd>{selected.date}</dd>
-                </dl>
-                <div className="grid gap-2">
-                  <p className="text-sm font-medium">{t("Summary")}</p>
-                  <p className="text-sm leading-relaxed text-muted-foreground">{selected.body || t("No summary provided.")}</p>
-                </div>
-                <div className="grid gap-2">
-                  <p className="text-sm font-medium">{t("Attachments")}</p>
-                  <div className="flex items-center gap-3 rounded-lg border p-3 text-sm">
-                    <span className="flex size-8 items-center justify-center rounded-md bg-primary/10 text-primary">
-                      <Paperclip className="size-4" />
-                    </span>
-                    <div className="min-w-0">
-                      <p className="truncate font-medium">{selected.reference}.pdf</p>
-                      <p className="text-xs text-muted-foreground">{t("Scanned letter · 1.2 MB")}</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <SheetFooter className="flex-row">
-                <Button className="flex-1" onClick={() => toast.info(t("Forwarding {name}", { name: selected.reference }))}>
-                  <Forward /> {t("Forward")}
-                </Button>
-                <Button variant="outline" className="flex-1" onClick={() => { archive(selected); setSelected(null); }}>
-                  <Archive /> {t("Archive")}
-                </Button>
-              </SheetFooter>
-            </>
-          ) : null}
-        </SheetContent>
-      </Sheet>
     </>
   );
 }
