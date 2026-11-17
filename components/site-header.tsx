@@ -18,17 +18,22 @@ import { SidebarTrigger } from "@/components/ui/sidebar";
 import { LanguageSwitcher } from "@/components/language-switcher";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { useI18n } from "@/lib/i18n";
+import { useTenant } from "@/lib/tenant";
+import { useTenantData } from "@/lib/use-tenant-data";
 
 export function SiteHeader() {
   const router = useRouter();
   const { t } = useI18n();
+  const { tenant } = useTenant();
+  const me = useTenantData().users[0];
+  const initials = me.name.split(" ").map((p) => p[0]).join("");
 
   return (
     <header className="sticky top-0 z-20 flex h-14 shrink-0 items-center gap-2 border-b bg-card/80 px-4 backdrop-blur">
       <SidebarTrigger className="-ml-1" />
       <Separator orientation="vertical" className="mr-1 data-vertical:h-4 data-vertical:self-center" />
       <span className="truncate text-sm font-medium text-muted-foreground">
-        {t("Ministry of Innovation and Technology")}
+        {t(tenant.name)}
       </span>
 
       <div className="ml-auto flex items-center gap-2">
@@ -46,14 +51,14 @@ export function SiteHeader() {
             render={<button className="rounded-full outline-none focus-visible:ring-3 focus-visible:ring-ring/50" aria-label={t("Account menu")} />}
           >
             <Avatar>
-              <AvatarFallback className="bg-primary text-primary-foreground text-xs font-medium">AM</AvatarFallback>
+              <AvatarFallback className="bg-primary text-primary-foreground text-xs font-medium">{initials}</AvatarFallback>
             </Avatar>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="min-w-56">
             <DropdownMenuGroup>
               <DropdownMenuLabel className="flex flex-col gap-0.5">
-                <span className="text-sm font-medium text-foreground">Abebe Mekonnen</span>
-                <span className="font-normal">abebe.mekonnen@mint.gov.et</span>
+                <span className="text-sm font-medium text-foreground">{me.name}</span>
+                <span className="font-normal">{me.email}</span>
               </DropdownMenuLabel>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />

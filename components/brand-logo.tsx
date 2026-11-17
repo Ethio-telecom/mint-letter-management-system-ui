@@ -1,11 +1,16 @@
+"use client";
+
 import Image from "next/image";
 import { cn } from "@/lib/utils";
+import { useTenant, type Tenant } from "@/lib/tenant";
 
-export function BrandLogo({ className, size = 36 }: { className?: string; size?: number }) {
+export function BrandLogo({ className, size = 36, tenant }: { className?: string; size?: number; tenant?: Tenant }) {
+  const { tenant: current } = useTenant();
+  const t = tenant ?? current;
   return (
     <Image
-      src="/logo.png"
-      alt="Ministry of Innovation and Technology"
+      src={t.logo}
+      alt={t.name}
       width={size}
       height={size}
       className={cn("shrink-0 object-contain", className)}

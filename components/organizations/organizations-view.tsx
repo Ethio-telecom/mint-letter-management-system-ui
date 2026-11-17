@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Ban, Building2, MoreHorizontal, Pencil, Plus, Search, Users } from "lucide-react";
 import { toast } from "sonner";
 import { FilterSelect } from "@/components/filter-select";
@@ -29,17 +30,28 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { organizations as seedOrganizations, type Organization } from "@/lib/data";
+import type { Organization } from "@/lib/data";
+import { useTenantData } from "@/lib/use-tenant-data";
 import { useI18n, type TranslationKey } from "@/lib/i18n";
 
 const statuses = ["All statuses", "Active", "Suspended"];
 
 export function OrganizationsView() {
   const { t, locale } = useI18n();
+  const { organizations: seedOrganizations } = useTenantData();
   const [organizations, setOrganizations] = useState<Organization[]>(seedOrganizations);
   const [query, setQuery] = useState("");
   const [status, setStatus] = useState(statuses[0]);
-  const [dialogOpen, setDialogOpen] = useState(false);
+  const [dialogState, setDialogState] = useState(false);
+  // `?new=1` (e.g. from the sidebar's "New Organization") opens the create form.
+  const router = useRouter();
+  const pathname = usePathname();
+  const fromLink = useSearchParams().get("new") === "1";
+  const dialogOpen = dialogState || fromLink;
+  const setDialogOpen = (open: boolean) => {
+    setDialogState(open);
+    if (!open && fromLink) router.replace(pathname, { scroll: false });
+  };
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();

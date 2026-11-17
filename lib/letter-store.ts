@@ -1,13 +1,16 @@
 "use client";
 
 import { useSyncExternalStore } from "react";
-import { letters as seedLetters, type Letter } from "@/lib/data";
+import { getTenantData, type Letter } from "@/lib/data";
+import { useTenant, type TenantId } from "@/lib/tenant";
 
 // In-memory letter store shared by the list and detail pages, so a letter created or archived
-// on one page shows up on the other. It resets on a full page reload; replace it with API calls
-// when the backend is wired up.
-let state: Letter[] = seedLetters;
+// on one page shows up on the other. Each tenant has its own list. It resets on a full page
+// reload; replace it with API calls when the backend is wired up.
+const state = new Map<TenantId, Letter[]>();
 const listeners = new Set<() => void>();
+
+const read = (tenant: TenantId) => state.get(tenant) ?? getTenantData(tenant).letters;
 
 function subscribe(listener: () => void) {
   listeners.add(listener);
@@ -16,18 +19,20 @@ function subscribe(listener: () => void) {
   };
 }
 
-function set(next: Letter[]) {
-  state = next;
+function set(tenant: TenantId, next: Letter[]) {
+  state.set(tenant, next);
   listeners.forEach((listener) => listener());
 }
 
 export const letterStore = {
-  add: (letter: Letter) => set([letter, ...state]),
-  update: (id: string, patch: Partial<Letter>) => set(state.map((l) => (l.id === id ? { ...l, ...patch } : l))),
+  add: (tenant: TenantId, letter: Letter) => set(tenant, [letter, ...read(tenant)]),
+  update: (tenant: TenantId, id: string, patch: Partial<Letter>) =>
+    set(tenant, read(tenant).map((l) => (l.id === id ? { ...l, ...patch } : l))),
 };
 
 export function useLetters() {
-  return useSyncExternalStore(subscribe, () => state, () => seedLetters);
+  const { tenant } = useTenant();
+  return useSyncExternalStore(subscribe, () => read(tenant.id), () => getTenantData(tenant.id).letters);
 }
 
 /** Memos live under /memos, every other letter type under /letters. */

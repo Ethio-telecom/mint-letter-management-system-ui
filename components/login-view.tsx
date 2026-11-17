@@ -5,7 +5,10 @@ import { BrandLogo } from "@/components/brand-logo";
 import { LanguageSwitcher } from "@/components/language-switcher";
 import { LoginForm } from "@/components/login-form";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { OrgSelect } from "@/components/org-select";
+import { am } from "@/lib/i18n/am";
 import { useI18n, type TranslationKey } from "@/lib/i18n";
+import { useTenant } from "@/lib/tenant";
 
 const highlights: { icon: LucideIcon; title: TranslationKey; text: TranslationKey }[] = [
   { icon: FileCheck2, title: "Register every letter", text: "Incoming, outgoing, internal letters and memos in one registry." },
@@ -15,9 +18,12 @@ const highlights: { icon: LucideIcon; title: TranslationKey; text: TranslationKe
 
 export function LoginView() {
   const { t, locale } = useI18n();
+  const { tenant } = useTenant();
+  const otherLangName = locale === "am" ? tenant.name : am[tenant.name];
   return (
     <div className="grid min-h-svh flex-1 lg:grid-cols-[minmax(0,5fr)_minmax(0,6fr)]">
-      <aside className="relative hidden overflow-hidden bg-[#185969] text-white lg:flex lg:flex-col lg:justify-between lg:p-12">
+      <aside style={{ backgroundColor: tenant.primary }}
+        className="relative hidden overflow-hidden text-white transition-colors lg:flex lg:flex-col lg:justify-between lg:p-12">
         <svg aria-hidden className="absolute inset-0 size-full opacity-[0.09]">
           <defs>
             <pattern id="hex" width="56" height="97" patternUnits="userSpaceOnUse" patternTransform="scale(0.9)">
@@ -32,8 +38,8 @@ export function LoginView() {
         <div className="relative flex items-center gap-3">
           <BrandLogo size={52} />
           <div className="leading-tight">
-            <p className="font-semibold">{t("Ministry of Innovation and Technology")}</p>
-            <p className="text-sm text-white/70">{locale === "am" ? "Ministry of Innovation and Technology" : "የኢኖቬሽን እና ቴክኖሎጂ ሚኒስቴር"}</p>
+            <p className="font-semibold">{t(tenant.name)}</p>
+            <p className="text-sm text-white/70">{otherLangName}</p>
           </div>
         </div>
 
@@ -60,11 +66,12 @@ export function LoginView() {
           </ul>
         </div>
 
-        <p className="relative text-xs text-white/55">{t("© 2026 Ministry of Innovation and Technology. All rights reserved.")}</p>
+        <p className="relative text-xs text-white/55">{t("© 2026 {org}. All rights reserved.", { org: t(tenant.name) })}</p>
       </aside>
 
       <main className="relative flex flex-col items-center justify-center bg-card px-6 py-12">
         <div className="absolute top-4 right-4 flex items-center gap-2">
+          <OrgSelect />
           <LanguageSwitcher />
           <ThemeToggle />
         </div>
@@ -72,7 +79,7 @@ export function LoginView() {
           <div className="mb-8 flex items-center gap-3 lg:hidden">
             <BrandLogo size={44} />
             <p className="text-sm leading-tight font-semibold">
-              {t("Ministry of Innovation and Technology")}
+              {t(tenant.name)}
             </p>
           </div>
           <h2 className="text-2xl font-semibold tracking-tight">{t("Welcome back")}</h2>
@@ -82,7 +89,7 @@ export function LoginView() {
           <LoginForm />
           <p className="mt-8 text-center text-sm text-muted-foreground">
             {t("Trouble signing in?")}{" "}
-            <a href="mailto:contact@mint.gov.et" className="font-medium text-primary underline-offset-4 hover:underline">
+            <a href={`mailto:contact@${tenant.domain}`} className="font-medium text-primary underline-offset-4 hover:underline">
               {t("Contact IT support")}
             </a>
           </p>

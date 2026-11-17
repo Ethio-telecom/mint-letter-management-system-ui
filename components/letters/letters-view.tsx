@@ -33,7 +33,9 @@ import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
-import { organizations, type Letter, type LetterPriority, type LetterType } from "@/lib/data";
+import type { Letter, LetterPriority, LetterType } from "@/lib/data";
+import { useTenant } from "@/lib/tenant";
+import { useTenantData } from "@/lib/use-tenant-data";
 import { letterHref, letterStore, useLetters } from "@/lib/letter-store";
 import { useI18n } from "@/lib/i18n";
 
@@ -47,6 +49,8 @@ export function LettersView({ kind = "letters" }: { kind?: "letters" | "memos" }
   const { t, tv } = useI18n();
   const router = useRouter();
   const allLetters = useLetters();
+  const { tenant } = useTenant();
+  const { organizations } = useTenantData();
   const letters = useMemo(() => allLetters.filter((l) => (l.type === "Memo") === isMemos), [allLetters, isMemos]);
   // The URL is the source of truth for filters (?type=&status=&priority=&q=). The route stays
   // mounted between visits, so state initialised once from the URL would go stale when a
@@ -106,10 +110,10 @@ export function LettersView({ kind = "letters" }: { kind?: "letters" | "memos" }
 
   function createLetter(form: FormData) {
     const letter: Letter = {
-      id: `ltr-new-${allLetters.length + 1}`,
-      reference: `MINT-${String(allLetters.length + 31).padStart(4, "0")}`,
+      id: `${tenant.id}-ltr-new-${allLetters.length + 1}`,
+      reference: `${tenant.id.toUpperCase()}-${String(allLetters.length + 31).padStart(4, "0")}`,
       subject: String(form.get("subject")),
-      sender: "Ministry of Innovation and Technology",
+      sender: tenant.name,
       recipient: String(form.get("recipient")),
       type: isMemos ? "Memo" : (String(form.get("type")) as LetterType),
       priority: String(form.get("priority")) as LetterPriority,
@@ -117,14 +121,14 @@ export function LettersView({ kind = "letters" }: { kind?: "letters" | "memos" }
       date: "Nov 15, 2026",
       body: String(form.get("body") || ""),
     };
-    letterStore.add(letter);
+    letterStore.add(tenant.id, letter);
     pagination.setPage(1);
     setDialogOpen(false);
     toast.success(isMemos ? t("Memo saved as draft") : t("Letter saved as draft"), { description: `${letter.reference} · ${letter.subject}` });
   }
 
   function archive(letter: Letter) {
-    letterStore.update(letter.id, { status: "Archived" });
+    letterStore.update(tenant.id, letter.id, { status: "Archived" });
     toast.success(t("{name} archived", { name: letter.reference }));
   }
 

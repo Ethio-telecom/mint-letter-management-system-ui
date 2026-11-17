@@ -8,9 +8,11 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useI18n } from "@/lib/i18n";
+import { useTenant } from "@/lib/tenant";
 
 export function LoginForm() {
   const { t } = useI18n();
+  const { tenant } = useTenant();
   const router = useRouter();
   const [showPassword, setShowPassword] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -29,7 +31,7 @@ export function LoginForm() {
         <Label htmlFor="email">{t("Email or username")}</Label>
         <div className="relative">
           <Mail className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
-          <Input id="email" name="email" autoComplete="username" placeholder="name@mint.gov.et" required className="h-10 pl-9" />
+          <Input id="email" name="email" autoComplete="username" placeholder={`name@${tenant.domain}`} required className="h-10 pl-9" />
         </div>
       </div>
 

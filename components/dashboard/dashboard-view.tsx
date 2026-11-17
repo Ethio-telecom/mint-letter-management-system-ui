@@ -9,10 +9,11 @@ import { StatusBadge } from "@/components/status-badge";
 import { buttonVariants } from "@/components/ui/button";
 import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { dashboardStats, letters, organizations, typeBreakdown, type Letter, type LetterType } from "@/lib/data";
+import type { Letter, LetterType, TenantData } from "@/lib/data";
+import { useTenantData } from "@/lib/use-tenant-data";
 import { useI18n, type TranslationKey } from "@/lib/i18n";
 
-const stats: { label: TranslationKey; icon: LucideIcon; value: string; change: string | null; previous: string; href?: string; tone: string }[] = [
+const buildStats = (dashboardStats: TenantData["dashboardStats"]): { label: TranslationKey; icon: LucideIcon; value: string; change: string | null; previous: string; href?: string; tone: string }[] => [
   { label: "Organizations", icon: Building2, href: "/organizations", tone: "bg-primary/10 text-primary", ...dashboardStats.organizations },
   { label: "Users", icon: Users, href: "/users", tone: "bg-sky-500/12 text-sky-700 dark:text-sky-300", ...dashboardStats.users },
   { label: "Letters", icon: FileText, href: "/letters", tone: "bg-amber-500/15 text-amber-700 dark:text-amber-300", ...dashboardStats.letters },
@@ -37,6 +38,8 @@ const drillCard =
 export function DashboardView() {
   const router = useRouter();
   const { t, tv, locale } = useI18n();
+  const { dashboardStats, letters, organizations, typeBreakdown } = useTenantData();
+  const stats = buildStats(dashboardStats);
   const topOrganizations = [...organizations].sort((a, b) => b.letters - a.letters).slice(0, 6);
   const recentLetters = letters.slice(0, 6);
 

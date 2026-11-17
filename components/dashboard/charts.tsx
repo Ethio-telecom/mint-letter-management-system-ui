@@ -10,10 +10,11 @@ import {
   ChartTooltipContent,
   type ChartConfig,
 } from "@/components/ui/chart";
-import { letterVolume, statusDistribution } from "@/lib/data";
+import { useTenantData } from "@/lib/use-tenant-data";
 import { useI18n } from "@/lib/i18n";
 
 export function LetterVolumeChart() {
+  const { letterVolume } = useTenantData();
   const { t } = useI18n();
   const router = useRouter();
   const volumeConfig = {
@@ -47,6 +48,7 @@ export function LetterVolumeChart() {
 }
 
 export function StatusChart() {
+  const { statusDistribution } = useTenantData();
   const { t, tv, locale } = useI18n();
   const router = useRouter();
   const statusConfig = {

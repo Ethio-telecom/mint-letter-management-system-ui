@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Building2, LayoutDashboard, Mail, StickyNote, Users, type LucideIcon } from "lucide-react";
-import { BrandLogo } from "@/components/brand-logo";
+import { OrgSwitcher } from "@/components/org-switcher";
 import {
   Sidebar,
   SidebarContent,
@@ -29,7 +29,7 @@ const groups: { label: TranslationKey; items: NavItem[] }[] = [
   {
     label: "Correspondence",
     items: [
-      { title: "Letters", href: "/letters", icon: Mail, badge: "5" },
+      { title: "Letters", href: "/letters", icon: Mail },
       { title: "Memos", href: "/memos", icon: StickyNote },
     ],
   },
@@ -48,17 +48,7 @@ export function AppSidebar() {
   return (
     <Sidebar collapsible="icon">
       <SidebarHeader>
-        <SidebarMenu>
-          <SidebarMenuItem>
-            <SidebarMenuButton size="lg" render={<Link href="/dashboard" />}>
-              <BrandLogo size={32} />
-              <div className="grid flex-1 text-left leading-tight">
-                <span className="truncate text-sm font-semibold">{t("Letter Management")}</span>
-                <span className="truncate text-xs text-muted-foreground">MInT · ኢ.ቴ.ሚ</span>
-              </div>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-        </SidebarMenu>
+        <OrgSwitcher />
       </SidebarHeader>
       <SidebarContent>
         {groups.map((group) => (

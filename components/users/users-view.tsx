@@ -30,7 +30,9 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { organizations, users as seedUsers, type User, type UserRole } from "@/lib/data";
+import { findOrganization, type User, type UserRole } from "@/lib/data";
+import { useTenant } from "@/lib/tenant";
+import { useTenantData } from "@/lib/use-tenant-data";
 import { useI18n } from "@/lib/i18n";
 
 const roles = ["All roles", "System Admin", "Org Admin", "Records Officer", "Approver", "Staff"];
@@ -46,7 +48,10 @@ const initials = (name: string) =>
 export function UsersView() {
   const { t, tv, locale } = useI18n();
   const orgLabel = (name: string) =>
-    locale === "am" ? (organizations.find((o) => o.name === name)?.nameAm ?? name) : name;
+    locale === "am" ? (findOrganization(name)?.nameAm ?? name) : name;
+  const { tenant } = useTenant();
+  const { organizations, users: seedUsers } = useTenantData();
+  const orgOptions = [tenant.name, ...organizations.map((o) => o.name)];
   const [users, setUsers] = useState<User[]>(seedUsers);
   const [query, setQuery] = useState("");
   const [role, setRole] = useState(roles[0]);
@@ -114,12 +119,12 @@ export function UsersView() {
                 </div>
                 <div className="grid gap-2">
                   <Label htmlFor="user-email">{t("Email")}</Label>
-                  <Input id="user-email" name="email" type="email" placeholder="name@mint.gov.et" required />
+                  <Input id="user-email" name="email" type="email" placeholder={`name@${tenant.domain}`} required />
                 </div>
               </div>
               <div className="grid gap-2">
                 <Label htmlFor="user-org">{t("Organization")}</Label>
-                <FilterSelect id="user-org" name="organization" options={organizations.map((o) => o.name)} placeholder={t("Select organization")} className="w-full" />
+                <FilterSelect id="user-org" name="organization" options={orgOptions} placeholder={t("Select organization")} className="w-full" />
               </div>
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="grid gap-2">

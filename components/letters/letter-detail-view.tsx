@@ -10,12 +10,14 @@ import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useI18n } from "@/lib/i18n";
 import { useLetters, letterStore } from "@/lib/letter-store";
+import { useTenant } from "@/lib/tenant";
 
 // Every letter shows the same sample scan until real documents come from the backend.
 const SAMPLE_PDF = "/sample-letter.pdf";
 
 export function LetterDetailView({ id, kind }: { id: string; kind: "letters" | "memos" }) {
   const { t, tv } = useI18n();
+  const { tenant } = useTenant();
   const letter = useLetters().find((l) => l.id === id && (l.type === "Memo") === (kind === "memos"));
   const backHref = `/${kind}`;
   const backLabel = kind === "memos" ? t("Back to memos") : t("Back to letters");
@@ -66,7 +68,7 @@ export function LetterDetailView({ id, kind }: { id: string; kind: "letters" | "
             variant="outline"
             disabled={letter.status === "Archived"}
             onClick={() => {
-              letterStore.update(letter.id, { status: "Archived" });
+              letterStore.update(tenant.id, letter.id, { status: "Archived" });
               toast.success(t("{name} archived", { name: letter.reference }));
             }}
           >

@@ -3,10 +3,14 @@
 export const am = {
   // Brand / shell
   "Ministry of Innovation and Technology": "የኢኖቬሽን እና ቴክኖሎጂ ሚኒስቴር",
+  "Ministry of Education": "የትምህርት ሚኒስቴር",
+  "Ministry of Peace": "የሰላም ሚኒስቴር",
+  "Switch organization": "ተቋም ቀይር",
+  "New Organization": "አዲስ ተቋም",
+  "Add new organization": "አዲስ ተቋም ያክሉ",
   "Letter Management": "የደብዳቤ አስተዳደር",
   "Letter Management System": "የደብዳቤ አስተዳደር ሥርዓት",
-  "© 2026 Ministry of Innovation and Technology. All rights reserved.":
-    "© 2026 የኢኖቬሽን እና ቴክኖሎጂ ሚኒስቴር። መብቱ በሕግ የተጠበቀ ነው።",
+  "© 2026 {org}. All rights reserved.": "© 2026 {org}። መብቱ በሕግ የተጠበቀ ነው።",
   Overview: "አጠቃላይ እይታ",
   Correspondence: "የደብዳቤ ልውውጥ",
   Administration: "አስተዳደር",

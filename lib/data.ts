@@ -1,4 +1,8 @@
 // Mock data for the UI. Replace with API calls when the backend is wired up.
+// Every tenant (see lib/tenant.tsx) gets its own seed: letters, users, counterpart organizations
+// and dashboard figures. Read it with `getTenantData(tenantId)` or the `useTenantData()` hook.
+
+import type { TenantId } from "@/lib/tenant";
 
 export type OrgStatus = "Active" | "Suspended";
 
@@ -14,9 +18,11 @@ export type Organization = {
   createdAt: string;
 };
 
-export const organizations: Organization[] = [
+/** Every organization on the platform. Each tenant sees the others as its counterparts. */
+export const directory: Organization[] = [
   { id: "org-01", name: "Ministry of Innovation and Technology", nameAm: "ኢኖቬሽን እና ቴክኖሎጂ ሚኒስቴር", code: "mint", users: 420, letters: 3161, storage: "1.84 GB", status: "Active", createdAt: "Oct 02, 2025" },
   { id: "org-02", name: "Ministry of Peace", nameAm: "የሰላም ሚኒስቴር", code: "mop", users: 90, letters: 4343, storage: "1.23 GB", status: "Active", createdAt: "Oct 14, 2025" },
+  { id: "org-15", name: "Ministry of Education", nameAm: "የትምህርት ሚኒስቴር", code: "moe", users: 610, letters: 5120, storage: "2.66 GB", status: "Active", createdAt: "Oct 08, 2025" },
   { id: "org-03", name: "Education and Training Authority", nameAm: "የትምህርት እና ሥልጠና ባለስልጣን", code: "neta", users: 182, letters: 3262, storage: "1.38 GB", status: "Active", createdAt: "Oct 21, 2025" },
   { id: "org-04", name: "Ethiopian Construction and Works Corporation", nameAm: "የኢትዮጵያ ኮንስትራክሽን ሥራዎች ኮርፖሬሽን", code: "ecwc", users: 64, letters: 1938, storage: "3.21 GB", status: "Active", createdAt: "Nov 03, 2025" },
   { id: "org-05", name: "Ministry of Logistics", nameAm: "ሎጂስቲክስ ሚኒስቴር", code: "motl", users: 99, letters: 1020, storage: "520.2 MB", status: "Active", createdAt: "Nov 18, 2025" },
@@ -66,8 +72,8 @@ const userSeed: [string, string, string, UserRole, UserStatus, string][] = [
   ["Mahlet Yohannes", "neta", "Accreditation", "Records Officer", "Active", "3 days ago"],
 ];
 
-export const users: User[] = userSeed.map(([name, code, department, role, status, lastActive], i) => {
-  const org = organizations.find((o) => o.code === code)!;
+const mintUsers: User[] = userSeed.map(([name, code, department, role, status, lastActive], i) => {
+  const org = directory.find((o) => o.code === code)!;
   return {
     id: `usr-${String(i + 1).padStart(3, "0")}`,
     name,
@@ -124,10 +130,12 @@ const letterSeed: [string, string, string, LetterType, LetterPriority, LetterSta
   ["Request for experts on construction e-permit system", "Ethiopian Construction and Works Corporation", "Ministry of Innovation and Technology", "Incoming", "Medium", "Archived", "Sep 29, 2026"],
 ];
 
-export const letters: Letter[] = letterSeed.map(
-  ([subject, sender, recipient, type, priority, status, date], i) => ({
-    id: `ltr-${String(i + 1).padStart(3, "0")}`,
-    reference: `MINT-${String(letterSeed.length + 30 - i).padStart(4, "0")}`,
+type LetterSeed = typeof letterSeed;
+
+function buildLetters(seed: LetterSeed, idPrefix: string, refPrefix: string): Letter[] {
+  return seed.map(([subject, sender, recipient, type, priority, status, date], i) => ({
+    id: `${idPrefix}${String(i + 1).padStart(3, "0")}`,
+    reference: `${refPrefix}-${String(seed.length + 30 - i).padStart(4, "0")}`,
     subject,
     sender,
     recipient,
@@ -137,17 +145,17 @@ export const letters: Letter[] = letterSeed.map(
     date,
     body:
       "This letter is registered in the Letter Management System. The full scanned document and its attachments are available to authorised recipients, and every routing step is recorded in the audit trail.",
-  }),
-);
+  }));
+}
 
-export const dashboardStats = {
+const mintStats = {
   organizations: { value: "49", change: null, previous: "49" },
   users: { value: "3,053", change: "+5.42%", previous: "2,896" },
   letters: { value: "15,242", change: "+13.91%", previous: "13,381" },
   storage: { value: "7.29 GB", change: "+11.07%", previous: "6.56 GB" },
 };
 
-export const letterVolume = [
+const mintVolume = [
   { month: "Dec", incoming: 412, outgoing: 298 },
   { month: "Jan", incoming: 486, outgoing: 341 },
   { month: "Feb", incoming: 531, outgoing: 402 },
@@ -162,14 +170,14 @@ export const letterVolume = [
   { month: "Nov", incoming: 904, outgoing: 742 },
 ];
 
-export const typeBreakdown: { type: LetterType; count: number }[] = [
+const mintTypes: { type: LetterType; count: number }[] = [
   { type: "Incoming", count: 6480 },
   { type: "Outgoing", count: 4930 },
   { type: "Internal", count: 2510 },
   { type: "Memo", count: 1322 },
 ];
 
-export const statusDistribution = [
+const mintStatuses = [
   { status: "Published", count: 8412 },
   { status: "Pending", count: 2907 },
   { status: "In Review", count: 1684 },
@@ -177,3 +185,187 @@ export const statusDistribution = [
   { status: "Draft", count: 513 },
   { status: "Archived", count: 984 },
 ];
+
+// ---------------------------------------------------------------------------------------------
+// Ministry of Education
+// ---------------------------------------------------------------------------------------------
+
+const moeLetterSeed: LetterSeed = [
+  ["Request for national exam centre connectivity", "Ministry of Education", "Ministry of Innovation and Technology", "Outgoing", "Urgent", "Pending", "Nov 15, 2026"],
+  ["የ2019 ዓ.ም የትምህርት ካሌንደር ማሳወቂያ", "የትምህርት ሚኒስቴር", "ለሁሉም ክልል ትምህርት ቢሮዎች", "Outgoing", "High", "Published", "Nov 13, 2026"],
+  ["Textbook printing and distribution budget", "Finance Directorate", "Minister's Office", "Internal", "Urgent", "In Review", "Nov 12, 2026"],
+  ["Accreditation report for private higher institutions", "Education and Training Authority", "Ministry of Education", "Incoming", "High", "Pending", "Nov 11, 2026"],
+  ["Teachers' professional development week", "Teacher Development Directorate", "All Directorates", "Memo", "Medium", "Published", "Nov 10, 2026"],
+  ["School feeding programme partnership renewal", "Ministry of Education", "Ministry of Peace", "Outgoing", "Medium", "Published", "Nov 07, 2026"],
+  ["የመምህራን ምደባ ጥያቄ", "የከተማ እና መሰረተ ልማት ሚኒስቴር", "የትምህርት ሚኒስቴር", "Incoming", "Low", "Returned", "Nov 06, 2026"],
+  ["Procurement of laboratory kits for secondary schools", "Procurement Directorate", "Finance Directorate", "Internal", "Medium", "In Review", "Nov 04, 2026"],
+  ["Digital learning platform rollout plan", "ICT Directorate", "Minister's Office", "Internal", "High", "Draft", "Nov 03, 2026"],
+  ["Exam season office hours", "Minister's Office", "All Staff", "Memo", "Low", "Published", "Nov 01, 2026"],
+  ["Student data protection guideline review", "Ministry of Innovation and Technology", "Ministry of Education", "Incoming", "Medium", "In Review", "Oct 29, 2026"],
+  ["School construction standards consultation", "Ministry of Education", "Ethiopian Construction and Works Corporation", "Outgoing", "Medium", "Published", "Oct 27, 2026"],
+  ["Curriculum review committee nominations", "Curriculum Directorate", "All Directorates", "Memo", "Medium", "Archived", "Oct 24, 2026"],
+  ["Scholarship quota for civil servants", "Civil Service Commission", "Ministry of Education", "Incoming", "Low", "Pending", "Oct 22, 2026"],
+  ["University entrance results release", "Ministry of Education", "Federal Public Procurement Service", "Outgoing", "High", "Draft", "Oct 20, 2026"],
+  ["Peace education module in civic curriculum", "Ministry of Peace", "Ministry of Education", "Incoming", "Medium", "Published", "Oct 17, 2026"],
+  ["Annual school census data collection", "Planning Directorate", "Regional Education Bureaus", "Internal", "High", "Published", "Oct 14, 2026"],
+  ["Year-end inventory count", "General Services", "All Staff", "Memo", "Low", "Archived", "Oct 10, 2026"],
+];
+
+const moeUsers: [string, string, UserRole, UserStatus, string][] = [
+  ["Mulu Getahun", "ICT Directorate", "System Admin", "Active", "5 minutes ago"],
+  ["Birtukan Ayele", "Records Office", "Records Officer", "Active", "20 minutes ago"],
+  ["Fikadu Lemma", "Minister's Office", "Approver", "Active", "1 hour ago"],
+  ["Hiwot Tadesse", "Curriculum Directorate", "Staff", "Active", "2 hours ago"],
+  ["Gemechu Bekele", "Teacher Development Directorate", "Org Admin", "Active", "Yesterday"],
+  ["Abeba Worku", "Planning Directorate", "Approver", "Active", "Yesterday"],
+  ["Mesfin Abate", "Procurement Directorate", "Staff", "Invited", "Never"],
+  ["Tsion Asfaw", "Finance Directorate", "Records Officer", "Active", "3 days ago"],
+  ["Getnet Alemayehu", "Higher Education", "Staff", "Disabled", "1 month ago"],
+  ["Eden Mesele", "General Services", "Staff", "Active", "4 days ago"],
+  ["Yared Shiferaw", "Legal Affairs", "Approver", "Active", "1 week ago"],
+  ["Rediet Kassa", "Communications", "Staff", "Active", "6 hours ago"],
+];
+
+// ---------------------------------------------------------------------------------------------
+// Ministry of Peace
+// ---------------------------------------------------------------------------------------------
+
+const mopLetterSeed: LetterSeed = [
+  ["Regional peace council meeting minutes", "Peace Building Directorate", "Minister's Office", "Internal", "High", "In Review", "Nov 14, 2026"],
+  ["የብሔራዊ ምክክር መድረክ ተሳትፎ ጥሪ", "የሰላም ሚኒስቴር", "ለሁሉም ፌዴራል ተቋማት", "Outgoing", "High", "Published", "Nov 13, 2026"],
+  ["Request for IDP registration system support", "Ministry of Peace", "Ministry of Innovation and Technology", "Outgoing", "Urgent", "Pending", "Nov 12, 2026"],
+  ["Conflict early-warning quarterly report", "Early Warning Directorate", "Minister's Office", "Internal", "Urgent", "Pending", "Nov 11, 2026"],
+  ["Volunteer coordinators orientation", "Human Resources", "All Directorates", "Memo", "Low", "Published", "Nov 10, 2026"],
+  ["Peace education module in civic curriculum", "Ministry of Peace", "Ministry of Education", "Outgoing", "Medium", "Published", "Nov 07, 2026"],
+  ["Interfaith dialogue forum logistics", "Ministry of Logistics", "Ministry of Peace", "Incoming", "Medium", "Returned", "Nov 05, 2026"],
+  ["Federal–regional relations workshop budget", "Finance Directorate", "Minister's Office", "Internal", "Medium", "Draft", "Nov 04, 2026"],
+  ["Community reconciliation programme update", "Ministry of Peace", "Ministry of Urban and Infrastructure", "Outgoing", "Medium", "In Review", "Oct 31, 2026"],
+  ["Field mission travel guidelines", "General Services", "All Staff", "Memo", "Low", "Published", "Oct 29, 2026"],
+  ["Legal opinion on the conflict resolution proclamation", "Federal Supreme Court of Ethiopia", "Ministry of Peace", "Incoming", "High", "Pending", "Oct 27, 2026"],
+  ["School feeding programme partnership renewal", "Ministry of Education", "Ministry of Peace", "Incoming", "Medium", "Published", "Oct 24, 2026"],
+  ["Youth peace ambassadors selection", "Youth Directorate", "All Directorates", "Memo", "Medium", "Archived", "Oct 21, 2026"],
+  ["Secondment of mediators from the civil service", "Civil Service Commission", "Ministry of Peace", "Incoming", "Low", "Archived", "Oct 18, 2026"],
+];
+
+const mopUsers: [string, string, UserRole, UserStatus, string][] = [
+  ["Ermias Tefera", "ICT Directorate", "System Admin", "Active", "8 minutes ago"],
+  ["Kidist Hailu", "Records Office", "Records Officer", "Active", "30 minutes ago"],
+  ["Solomon Gebre", "Minister's Office", "Approver", "Active", "2 hours ago"],
+  ["Aster Wolde", "Peace Building Directorate", "Org Admin", "Active", "Yesterday"],
+  ["Biniam Tekle", "Early Warning Directorate", "Staff", "Active", "Yesterday"],
+  ["Frehiwot Dagne", "Youth Directorate", "Staff", "Invited", "Never"],
+  ["Abel Mengistu", "Finance Directorate", "Approver", "Active", "3 days ago"],
+  ["Senait Berhe", "Human Resources", "Records Officer", "Disabled", "2 months ago"],
+  ["Daniel Ayalew", "Legal Affairs", "Staff", "Active", "5 days ago"],
+];
+
+// ---------------------------------------------------------------------------------------------
+// Assembly
+// ---------------------------------------------------------------------------------------------
+
+export type DashboardStat = { value: string; change: string | null; previous: string };
+
+export type TenantData = {
+  /** Counterpart organizations this tenant corresponds with (excludes the tenant itself). */
+  organizations: Organization[];
+  users: User[];
+  letters: Letter[];
+  dashboardStats: Record<"organizations" | "users" | "letters" | "storage", DashboardStat>;
+  letterVolume: { month: string; incoming: number; outgoing: number }[];
+  typeBreakdown: { type: LetterType; count: number }[];
+  statusDistribution: { status: string; count: number }[];
+};
+
+const tenantOrg: Record<TenantId, { code: string; name: string }> = {
+  mint: { code: "mint", name: "Ministry of Innovation and Technology" },
+  moe: { code: "moe", name: "Ministry of Education" },
+  mop: { code: "mop", name: "Ministry of Peace" },
+};
+
+/** Deterministic 0.5–1.5 multiplier so each tenant's per-organization counts differ. */
+const jitter = (seed: string) => 0.5 + ([...seed].reduce((h, c) => (h * 31 + c.charCodeAt(0)) % 997, 7) / 997);
+
+const scaleBy = <T extends Record<string, unknown>>(rows: T[], factor: number, keys: (keyof T)[], salt: string) =>
+  rows.map((row, i) => {
+    const next = { ...row };
+    keys.forEach((key) => {
+      next[key] = Math.round((row[key] as number) * factor * (0.9 + jitter(`${salt}${i}${String(key)}`) * 0.2)) as T[keyof T];
+    });
+    return next;
+  });
+
+function staff(tenant: TenantId, rows: [string, string, UserRole, UserStatus, string][]): User[] {
+  const { code, name: organization } = tenantOrg[tenant];
+  return rows.map(([name, department, role, status, lastActive], i) => ({
+    id: `${tenant}-usr-${String(i + 1).padStart(3, "0")}`,
+    name,
+    email: `${name.toLowerCase().replace(" ", ".")}@${code}.gov.et`,
+    organization,
+    department,
+    role,
+    status,
+    lastActive,
+  }));
+}
+
+function counterparts(tenant: TenantId): Organization[] {
+  const self = tenantOrg[tenant].code;
+  return directory
+    .filter((o) => o.code !== self)
+    .map((o) => (tenant === "mint" ? o : { ...o, letters: Math.round(o.letters * jitter(tenant + o.code) * (tenant === "moe" ? 0.8 : 0.35)) }));
+}
+
+const fmt = (n: number) => n.toLocaleString("en-US");
+
+function build(tenant: TenantId): TenantData {
+  if (tenant === "mint") {
+    return {
+      organizations: counterparts("mint"),
+      users: mintUsers,
+      letters: buildLetters(letterSeed, "ltr-", "MINT"),
+      dashboardStats: mintStats,
+      letterVolume: mintVolume,
+      typeBreakdown: mintTypes,
+      statusDistribution: mintStatuses,
+    };
+  }
+  const isMoe = tenant === "moe";
+  const factor = isMoe ? 1.45 : 0.42;
+  const typeBreakdown = scaleBy(mintTypes, factor, ["count"], tenant);
+  const total = typeBreakdown.reduce((sum, t) => sum + t.count, 0);
+  const organizations = counterparts(tenant);
+  return {
+    organizations,
+    users: staff(tenant, isMoe ? moeUsers : mopUsers),
+    letters: isMoe ? buildLetters(moeLetterSeed, "moe-ltr-", "MOE") : buildLetters(mopLetterSeed, "mop-ltr-", "MOP"),
+    dashboardStats: isMoe
+      ? {
+          organizations: { value: String(organizations.length), change: null, previous: String(organizations.length) },
+          users: { value: "4,418", change: "+3.10%", previous: "4,285" },
+          letters: { value: fmt(total), change: "+9.84%", previous: fmt(Math.round(total / 1.0984)) },
+          storage: { value: "10.42 GB", change: "+8.25%", previous: "9.63 GB" },
+        }
+      : {
+          organizations: { value: String(organizations.length), change: null, previous: String(organizations.length) },
+          users: { value: "1,126", change: "+1.62%", previous: "1,108" },
+          letters: { value: fmt(total), change: "+21.40%", previous: fmt(Math.round(total / 1.214)) },
+          storage: { value: "2.14 GB", change: "+17.90%", previous: "1.82 GB" },
+        },
+    letterVolume: scaleBy(mintVolume, factor, ["incoming", "outgoing"], tenant),
+    typeBreakdown,
+    statusDistribution: scaleBy(mintStatuses, factor, ["count"], tenant),
+  };
+}
+
+const cache = new Map<TenantId, TenantData>();
+
+export function getTenantData(tenant: TenantId): TenantData {
+  if (!cache.has(tenant)) cache.set(tenant, build(tenant));
+  return cache.get(tenant)!;
+}
+
+/** Every tenant's letters — used to prerender the detail pages. */
+export const allLetters: Letter[] = (["mint", "moe", "mop"] as TenantId[]).flatMap((t) => getTenantData(t).letters);
+
+/** Name lookup across the whole platform, including the current tenant itself. */
+export const findOrganization = (name: string) => directory.find((o) => o.name === name);
