@@ -25,6 +25,28 @@ export const tenants: Tenant[] = [
   { id: "mop", name: "Ministry of Peace", abbr: "MoP", short: "MoP · ሰ.ሚ", domain: "mop.gov.et", logo: "/tenants/mop.svg", primary: "#2f7d4a" },
 ];
 
+/**
+ * CSS variable overrides per tenant (light and dark). MInT uses the defaults in globals.css.
+ * Rendered as an inline <style> by the root layout, so switching never depends on a CSS rebuild.
+ */
+const palettes: Partial<Record<TenantId, { light: Record<string, string>; dark: Record<string, string> }>> = {
+  moe: {
+    light: { "accent": "#e6eefa", "accent-foreground": "#163e73", "secondary": "#eaf0fa", "secondary-foreground": "#163e73", "sidebar-accent": "#e6eefa", "sidebar-accent-foreground": "#163e73", "primary": "#1d4f91", "ring": "#1d4f91", "chart-1": "#1d4f91", "sidebar-primary": "#1d4f91", "sidebar-ring": "#1d4f91" },
+    dark: { "accent": "#1a2c47", "accent-foreground": "#d6e3f7", "secondary": "#182a42", "secondary-foreground": "#d6e3f7", "sidebar-accent": "#1a2c47", "sidebar-accent-foreground": "#e6eefa", "primary": "#6ea4ec", "primary-foreground": "#0a1d38", "ring": "#6ea4ec", "chart-1": "#6ea4ec", "sidebar-primary": "#6ea4ec", "sidebar-primary-foreground": "#0a1d38", "sidebar-ring": "#6ea4ec" },
+  },
+  mop: {
+    light: { "accent": "#e5f2ea", "accent-foreground": "#22603a", "secondary": "#e9f4ed", "secondary-foreground": "#22603a", "sidebar-accent": "#e5f2ea", "sidebar-accent-foreground": "#22603a", "primary": "#2f7d4a", "ring": "#2f7d4a", "chart-1": "#2f7d4a", "sidebar-primary": "#2f7d4a", "sidebar-ring": "#2f7d4a" },
+    dark: { "accent": "#1a3626", "accent-foreground": "#d4ecdc", "secondary": "#183323", "secondary-foreground": "#d4ecdc", "sidebar-accent": "#1a3626", "sidebar-accent-foreground": "#e5f2ea", "primary": "#6cc48a", "primary-foreground": "#0b2a16", "ring": "#6cc48a", "chart-1": "#6cc48a", "sidebar-primary": "#6cc48a", "sidebar-primary-foreground": "#0b2a16", "sidebar-ring": "#6cc48a" },
+  },
+};
+
+const declarations = (vars: Record<string, string>) =>
+  Object.entries(vars).map(([name, value]) => `--${name}:${value};`).join("");
+
+export const tenantStyles = Object.entries(palettes)
+  .map(([id, p]) => `html[data-tenant="${id}"]{${declarations(p!.light)}}html[data-tenant="${id}"].dark{${declarations(p!.dark)}}`)
+  .join("");
+
 const DEFAULT: TenantId = "mint";
 const STORAGE_KEY = "tenant";
 const EVENT = "tenant-change";
